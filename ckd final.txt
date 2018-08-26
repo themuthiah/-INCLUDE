@@ -1,0 +1,258 @@
+import pandas as pd
+import numpy as np
+# matplotlib.pyplot for data plots
+import matplotlib.pyplot as plt
+from sklearn import preprocessing as prep
+from sklearn import datasets
+from sklearn import metrics
+from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.feature_selection import RFE
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.cross_validation import train_test_split
+
+readData = pd.read_table('chronic_kidney_disease_cleaned.arff', ',', header=None,names=["age", "bloodPressure","specificGravity","albumin","sugar","redBloodCells","pusCell","pusCellClumps","bacteria", "bloodGlucoseRandom","bloodUrea","serumCreatinine","sodium","potassium","hemoglobin","packedCellVolume","whiteBloodCellCount","redBloodCellCount","hypertension","diabetesMellitus","coronaryArteryDisease","appetite","pedalEdema","anemia","class" ])
+data = pd.DataFrame(readData);
+print("Rows and Columns", data.shape)
+data = data.replace('?', np.NaN)
+data = data.replace('\t?', np.NaN)
+data.head(10)
+missing = data.isnull().sum(axis=0)
+print("Columns and Number of missing data \n", missing)
+redBloodCells_mapping = {'normal' : 1, 'abnormal' : 0}
+data['redBloodCells'] = data['redBloodCells'].map(redBloodCells_mapping)
+pusCell_mapping = {'normal' : 1, 'abnormal' : 0}
+data['pusCell'] = data['pusCell'].map(pusCell_mapping)
+pusCellClumps_mapping = {'present' : 1, 'notpresent' : 0}
+data['pusCellClumps'] = data['pusCellClumps'].map(pusCellClumps_mapping)
+bacteria_mapping = {'present' : 1, 'notpresent' : 0}
+data['bacteria'] = data['bacteria'].map(bacteria_mapping)
+hypertension_mapping = {'yes' : 1, 'no' : 0}
+data['hypertension'] = data['hypertension'].map(hypertension_mapping)
+diabetesMellitus_mapping = {'yes' : 1, 'no' : 0}
+data['diabetesMellitus'] = data['diabetesMellitus'].map(diabetesMellitus_mapping)
+coronaryArteryDisease_mapping = {'yes' : 1, 'no' : 0}
+data['coronaryArteryDisease'] = data['coronaryArteryDisease'].map(coronaryArteryDisease_mapping)
+appetite_mapping = {'good' : 1, 'poor' : 0}
+data['appetite'] = data['appetite'].map(appetite_mapping) 
+pedalEdema_mapping = {'yes' : 1, 'no' : 0}
+data['pedalEdema'] = data['pedalEdema'].map(pedalEdema_mapping)
+anemia_mapping = {'yes' : 1, 'no' : 0}
+data['anemia'] = data['anemia'].map(anemia_mapping)
+class_mapping = {'ckd' : 1, 'notckd' : 0}
+data['class'] = data['class'].map(class_mapping)
+data['age'] = data.age.astype(float)
+data['age'].fillna((data['age'].mean()), inplace=True)
+data['age'] = data.age.astype(int)
+data['bloodPressure'] = data.bloodPressure.astype(float)
+data['bloodPressure'].fillna((data['bloodPressure'].mean()), inplace=True)
+data['bloodPressure'] = data.bloodPressure.astype(int)
+data['specificGravity'] = data['specificGravity'].fillna(data['specificGravity'].value_counts().index[0])
+data['specificGravity'] = data.specificGravity.astype(float)
+data['albumin'] = data['albumin'].fillna(data['albumin'].value_counts().index[0])
+data['albumin'] = data.albumin.astype(int)
+data['sugar'] = data['sugar'].fillna(data['sugar'].value_counts().index[0])
+data['sugar'] = data.sugar.astype(int)
+data['redBloodCells'] = data['redBloodCells'].fillna(data['redBloodCells'].value_counts().index[0])
+data['redBloodCells'] = data.redBloodCells.astype(int)
+data['pusCell'] = data['pusCell'].fillna(data['pusCell'].value_counts().index[0])
+data['pusCell'] = data.pusCell.astype(int)
+data['pusCellClumps'] = data['pusCellClumps'].fillna(data['pusCellClumps'].value_counts().index[0])
+data['pusCellClumps'] = data.pusCellClumps.astype(int)
+data['bacteria'] = data['bacteria'].fillna(data['bacteria'].value_counts().index[0])
+data['bacteria'] = data.bacteria.astype(int)
+data['bloodGlucoseRandom'] = data['bloodGlucoseRandom'].fillna(data['bloodGlucoseRandom'].value_counts().index[0])
+data['bloodGlucoseRandom'] = data.bloodGlucoseRandom.astype(int)
+data['bloodUrea'] = data.bloodUrea.astype(float)
+data['bloodUrea'].fillna((data['bloodUrea'].mean()), inplace=True)
+data['bloodUrea'] = data.bloodUrea.astype(int)
+data['serumCreatinine'] = data.serumCreatinine.astype(float)
+data['serumCreatinine'].fillna((data['serumCreatinine'].mean()), inplace=True)
+data['serumCreatinine'] = data.serumCreatinine.astype(int)
+data['sodium'] = data.sodium.astype(float)
+data['sodium'].fillna((data['sodium'].mean()), inplace=True)
+data['sodium'] = data.sodium.astype(int)
+data['potassium'] = data.potassium.astype(float)
+data['potassium'].fillna((data['potassium'].mean()), inplace=True)
+data['potassium'] = data.potassium.astype(int)
+data['hemoglobin'] = data.hemoglobin.astype(float)
+data['hemoglobin'].fillna((data['hemoglobin'].mean()), inplace=True)
+data['hemoglobin'] = data.hemoglobin.astype(int)
+data['packedCellVolume'] = data.packedCellVolume.astype(float)
+data['packedCellVolume'].fillna((data['packedCellVolume'].mean()), inplace=True)
+data['packedCellVolume'] = data.packedCellVolume.astype(int)
+data['whiteBloodCellCount'] = data.whiteBloodCellCount.astype(float)
+data['whiteBloodCellCount'].fillna((data['whiteBloodCellCount'].mean()), inplace=True)
+data['whiteBloodCellCount'] = data.whiteBloodCellCount.astype(int)
+data['redBloodCellCount'] = data.redBloodCellCount.astype(float)
+data['redBloodCellCount'].fillna((data['redBloodCellCount'].mean()), inplace=True)
+data['redBloodCellCount'] = data.redBloodCellCount.astype(int)
+data['hypertension'] = data['hypertension'].fillna(data['hypertension'].value_counts().index[0])
+data['hypertension'] = data.hypertension.astype(int)
+data['diabetesMellitus'] = data['diabetesMellitus'].fillna(data['diabetesMellitus'].value_counts().index[0])
+data['diabetesMellitus'] = data.diabetesMellitus.astype(int)
+data['coronaryArteryDisease'] = data['coronaryArteryDisease'].fillna(data['coronaryArteryDisease'].value_counts().index[0])
+data['coronaryArteryDisease'] = data.coronaryArteryDisease.astype(int)
+data['appetite'] = data['appetite'].fillna(data['appetite'].value_counts().index[0])
+data['appetite'] = data.appetite.astype(int)
+data['pedalEdema'] = data['pedalEdema'].fillna(data['pedalEdema'].value_counts().index[0])
+data['pedalEdema'] = data.appetite.astype(int)
+data['anemia'] = data['anemia'].fillna(data['anemia'].value_counts().index[0])
+data['anemia'] = data.anemia.astype(int)
+data.head(10)
+data["bloodGlucoseRandom"] = data["bloodGlucoseRandom"][abs(data["bloodGlucoseRandom"] - np.mean(data["bloodGlucoseRandom"])) < 4 * np.std(data["bloodGlucoseRandom"])]
+data["bloodUrea"] = data["bloodUrea"][abs(data["bloodUrea"] - np.mean(data["bloodUrea"])) < 3 * np.std(data["bloodUrea"])]
+data["serumCreatinine"] = data["serumCreatinine"][abs(data["serumCreatinine"] - np.mean(data["serumCreatinine"])) < 3 * np.std(data["serumCreatinine"])]
+data["sodium"] = data["sodium"][abs(data["sodium"] - np.mean(data["sodium"])) < 4 * np.std(data["sodium"])]
+data["potassium"] = data["potassium"][abs(data["potassium"] - np.mean(data["potassium"])) < 3 * np.std(data["potassium"])]
+data["hemoglobin"] = data["hemoglobin"][abs(data["hemoglobin"] - np.mean(data["hemoglobin"])) < 3 * np.std(data["hemoglobin"])]
+data["packedCellVolume"] = data["packedCellVolume"][abs(data["packedCellVolume"] - np.mean(data["packedCellVolume"])) < 3 * np.std(data["packedCellVolume"])]
+data["whiteBloodCellCount"] = data["whiteBloodCellCount"][abs(data["whiteBloodCellCount"] - np.mean(data["whiteBloodCellCount"])) < 3 * np.std(data["whiteBloodCellCount"])]
+data["redBloodCellCount"] = data["redBloodCellCount"][abs(data["redBloodCellCount"] - np.mean(data["redBloodCellCount"])) < 3 * np.std(data["redBloodCellCount"])]
+missing = data.isnull().sum(axis=0) 
+print("Columns and Number of missing data \n", missing)
+data.head(10)
+data.dropna(inplace=True)
+data.reset_index(drop=True, inplace=True)
+data.head(10)
+data.dropna(inplace=True)
+data.reset_index(drop=True, inplace=True)
+data.head(10)
+corr = data.corr()
+fig, ax = plt.subplots(figsize=(25, 25))
+ax.matshow(corr)
+plt.xticks(range(len(corr.columns)), corr.columns)
+plt.yticks(range(len(corr.columns)), corr.columns)
+plt.show()
+scaler = MinMaxScaler(feature_range=(0, 1))
+data[['age','bloodPressure','bloodGlucoseRandom','bloodUrea','serumCreatinine',
+      'sodium','potassium','hemoglobin','packedCellVolume','whiteBloodCellCount',
+      'redBloodCellCount']] = scaler.fit_transform(data[['age','bloodPressure','bloodGlucoseRandom',
+                                                         'bloodUrea','serumCreatinine','sodium','potassium',
+                                                         'hemoglobin','packedCellVolume','whiteBloodCellCount',
+                                                         'redBloodCellCount']])
+data.head(10)
+array = data.values
+X = array[:,0:24]
+Y = array[:,24]
+model = ExtraTreesClassifier()
+model.fit(X, Y)
+importances = model.feature_importances_
+std = np.std([tree.feature_importances_ for tree in model.estimators_],
+             axis=0)
+indices = np.argsort(importances)[::-1]
+print("Feature ranking:")
+for f in range(X.shape[1]):
+    print("%d. feature %d (%f)" % (f + 1, indices[f], importances[indices[f]]))
+plt.show ()
+plt.title("Feature importances")
+plt.bar(range(X.shape[1]), importances[indices],
+       color="b", yerr=std[indices], align="center")
+plt.xticks(range(X.shape[1]), indices)
+plt.xlim([-1, X.shape[1]])
+plt.show()
+array = data.values
+X = array[:,0:24]
+Y = array[:,24]
+model = ExtraTreesClassifier()
+model.fit(X, Y)
+importances = model.feature_importances_
+std = np.std([tree.feature_importances_ for tree in model.estimators_],
+             axis=0)
+indices = np.argsort(importances)[::-1]
+print("Feature ranking:")
+for f in range(X.shape[1]):
+    print("%d. feature %d (%f)" % (f + 1, indices[f], importances[indices[f]]))
+plt.figure()
+plt.title("Feature importances")
+plt.bar(range(X.shape[1]), importances[indices],
+       color="b", yerr=std[indices], align="center")
+plt.xticks(range(X.shape[1]), indices)
+plt.xlim([-1, X.shape[1]])
+plt.show()
+del data['pusCellClumps']
+del data['whiteBloodCellCount']
+del data['potassium']
+del data['bacteria']
+del data['coronaryArteryDisease']
+del data['age']
+del data['sugar']
+del data['bloodUrea']
+del data['sodium']
+del data['bloodPressure']
+del data['bloodGlucoseRandom']
+del data['redBloodCells']
+del data['serumCreatinine']
+del data['anemia']
+data.shape
+data.head(20)
+data.to_csv('Data_chronic_kidney_disease_6_6.csv',sep='\t')
+num_obs = len(data)#Find number of rows
+num_true = len(data.loc[data['class'] == 1.0])#Number of people who have the disease
+num_false = len(data.loc[data['class'] == 0.0])#Number of people who do not have the disease
+print("Number of True cases:  {0} ({1:2.2f}%)".format(num_true, (num_true/num_obs) * 100))
+print("Number of False cases: {0} ({1:2.2f}%)".format(num_false, (num_false/num_obs) * 100))
+
+from sklearn.cross_validation import train_test_split
+
+feature_col_names = ["specificGravity","albumin","pusCell","hemoglobin","packedCellVolume",
+                                "redBloodCellCount","hypertension","diabetesMellitus",
+                                "appetite","pedalEdema"]
+predicted_class_names = ['class']
+X = data[feature_col_names].values     
+y = data[predicted_class_names].values
+split_test_size = 0.3
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=split_test_size, random_state=5)
+print("{0:0.2f}% in training set".format((len(X_train)/len(data.index)) * 100))
+print("{0:0.2f}% in test set".format((len(X_test)/len(data.index)) * 100))
+print("Original True  : {0} ({1:0.2f}%)".format(len(data.loc[data['class'] == 1]), (len(data.loc[data['class'] == 1])/len(data.index)) * 100.0))
+print("Original False : {0} ({1:0.2f}%)".format(len(data.loc[data['class'] == 0]), (len(data.loc[data['class'] == 0])/len(data.index)) * 100.0))
+print("")
+print("Training True  : {0} ({1:0.2f}%)".format(len(y_train[y_train[:] == 1]), (len(y_train[y_train[:] == 1])/len(y_train) * 100.0)))
+print("Training False : {0} ({1:0.2f}%)".format(len(y_train[y_train[:] == 0]), (len(y_train[y_train[:] == 0])/len(y_train) * 100.0)))
+print("")
+print("Test True      : {0} ({1:0.2f}%)".format(len(y_test[y_test[:] == 1]), (len(y_test[y_test[:] == 1])/len(y_test) * 100.0)))
+print("Test False     : {0} ({1:0.2f}%)".format(len(y_test[y_test[:] == 0]), (len(y_test[y_test[:] == 0])/len(y_test) * 100.0)))
+from sklearn.naive_bayes import GaussianNB
+nb_model = GaussianNB()
+nb_model.fit(X_train, y_train.ravel())
+nb_predict_test = nb_model.predict(X_test)
+from sklearn import metrics
+print("Accuracy: {0:.4f}".format(metrics.accuracy_score(y_test, nb_predict_test)))
+from sklearn.naive_bayes import MultinomialNB
+nb_model = MultinomialNB()
+nb_model.fit(X_train, y_train.ravel())
+nb_predict_test = nb_model.predict(X_test)
+from sklearn import metrics
+print("Accuracy: {0:.4f}".format(metrics.accuracy_score(y_test, nb_predict_test)))
+print("Confusion Matrix")
+print("{0}".format(metrics.confusion_matrix(y_test, nb_predict_test)))
+print("")
+print("Classification Report")
+print(metrics.classification_report(y_test, nb_predict_test))
+from sklearn.ensemble import RandomForestClassifier
+rf_model = RandomForestClassifier(random_state=42)      # Create random forest object
+rf_model.fit(X_train, y_train.ravel())
+rf_predict_train = rf_model.predict(X_train)
+print("Accuracy: {0:.4f}".format(metrics.accuracy_score(y_train, rf_predict_train)))
+rf_predict_test = rf_model.predict(X_test)
+print("Accuracy: {0:.4f}".format(metrics.accuracy_score(y_test, rf_predict_test)))
+print(metrics.confusion_matrix(y_test, rf_predict_test) )
+print("")
+print("Classification Report")
+print(metrics.classification_report(y_test, rf_predict_test))
+from sklearn.linear_model import LogisticRegressionCV
+
+lr_cv_model = LogisticRegressionCV(n_jobs=-1, random_state=42, Cs=3, cv=10, refit=False, class_weight="balanced")   
+lr_cv_model.fit(X_train, y_train.ravel())
+lr_cv_predict_test = lr_cv_model.predict(X_test)
+print("Accuracy: {0:.4f}".format(metrics.accuracy_score(y_test, lr_cv_predict_test)))
+print(metrics.confusion_matrix(y_test, lr_cv_predict_test) )
+print("")
+print("Classification Report")
+print(metrics.classification_report(y_test, lr_cv_predict_test))
+print(rf_model.predict([[1.025,0,1,0.916667,1.000000,1.00,0,0,1,0]]))
+print(rf_model.predict([[1.01,2,1,0.5,0.5,0.5,0,0,1,0]]))
+print(rf_model.predict([[1.010,4,0,0.534132,0.242424,0.50,0,1,1,0]]))
+print(rf_model.predict([[1.035,4,1,0.755757,0.767676,0.50,0,0,1,1]]))
+print(rf_model.predict([[1.020,2,1,0.878787,0.656565,0.35,1,1,1,0]]))
